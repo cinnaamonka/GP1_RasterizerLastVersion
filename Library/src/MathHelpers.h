@@ -1,7 +1,7 @@
 #pragma once
 #include <cfloat>
 #include <cmath>
-
+#include <algorithm>
 namespace dae
 {
 	/* --- HELPER STRUCTS --- */
@@ -59,6 +59,7 @@ namespace dae
 	}
 	inline float Remap(float value, float inputMin, float inputMax, float outputMin, float outputMax)
 	{
+		value = std::ranges::clamp(value,inputMin, inputMax);
 		return outputMin + (value - inputMin) * (outputMax - outputMin) / (inputMax - inputMin);
 	}
 }

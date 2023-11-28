@@ -32,9 +32,9 @@ Renderer::Renderer(SDL_Window* pWindow) :
 	m_FinalColorEnabled = true;
 
 	//m_TextureVehicle = Texture::LoadFromFile("Resources/uv_grid_2.png");
-	m_TextureVehicle = Texture::LoadFromFile("Resources/vehicle_diffuse.png");
+	m_TextureVehicle = Texture::LoadFromFile("Resources/tuktuk.png");
 
-	Utils::ParseOBJ("Resources/vehicle.obj", m_Vehicle.vertices, m_Vehicle.indices);
+	Utils::ParseOBJ("Resources/tuktuk.obj", m_Vehicle.vertices, m_Vehicle.indices);
 	m_Vehicle.primitiveTopology = PrimitiveTopology::TriangleList;
 }
 
@@ -129,7 +129,7 @@ void Renderer::Render()
 	ColorRGB finalColor;
 	Triangle4 currentTriangle;
 
-	for (int i = 0; i < m_Meshes[0].indices.size() - 2; i++)
+	for (int i = 0; i < m_Meshes[0].indices.size() - 2; i+= 3)
 	{
 		if (m_Meshes[0].primitiveTopology == PrimitiveTopology::TriangleList)
 		{
@@ -139,6 +139,7 @@ void Renderer::Render()
 				meshes_screen[0].vertices_out[m_Meshes[0].indices[i + 1]],
 				meshes_screen[0].vertices_out[m_Meshes[0].indices[i + 2]]
 			};
+			
 		}
 		else if (i % 2 == 0)
 		{
@@ -208,7 +209,7 @@ void Renderer::Render()
 
 				//interpolate through the depth values
 				float pixelDepth = 1 /
-					(W0 / currentTriangle.vertex0.position.z +
+					   (W0 / currentTriangle.vertex0.position.z +
 						W1 / currentTriangle.vertex1.position.z +
 						W2 / currentTriangle.vertex2.position.z);
 
@@ -221,7 +222,7 @@ void Renderer::Render()
 				m_pDepthBuffer[pixelIndex] = pixelDepth;
 
 				float interpolatedDepth = 1 /
-					(W0 / currentTriangle.vertex0.position.w +
+					   (W0 / currentTriangle.vertex0.position.w +
 						W1 / currentTriangle.vertex1.position.w +
 						W2 / currentTriangle.vertex2.position.w);
 
@@ -239,7 +240,7 @@ void Renderer::Render()
 				}
 				else
 				{
-					const float remap = Remap(pixelDepth, 0.985f, 1.0f, 0.2f, 1.0f);
+					const float remap = Remap(pixelDepth, 0.9f, 1.0f, 0.2f, 1.0f);
 					finalColor = ColorRGB{ remap, remap, remap };
 				}
 
