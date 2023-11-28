@@ -12,19 +12,19 @@ namespace dae
 	{
 		Camera() = default;
 
-		Camera(const Vector3& _origin, float _fovAngle):
-			origin{_origin},
-			fovAngle{_fovAngle}
+		Camera(const Vector3& _origin, float _fovAngle) :
+			origin{ _origin },
+			fovAngle{ _fovAngle }
 		{
 		}
 
 		Vector3 origin{};
-		float fovAngle{90.f};
+		float fovAngle{ 90.f };
 		float fov{ tanf((fovAngle * TO_RADIANS) / 2.f) };
 
-		Vector3 forward{Vector3::UnitZ};
-		Vector3 up{Vector3::UnitY};
-		Vector3 right{Vector3::UnitX};
+		Vector3 forward{ Vector3::UnitZ };
+		Vector3 up{ Vector3::UnitY };
+		Vector3 right{ Vector3::UnitX };
 
 		float totalPitch{};
 		float totalYaw{};
@@ -37,23 +37,25 @@ namespace dae
 		Matrix invViewMatrix{};
 		Matrix viewMatrix{};
 		Matrix worldViewProectionMatrix{};
+		Matrix worldMatrix{};
 		float aspectRatioVar{};
 
-		void Initialize(float aspectRatio,float _fovAngle = 90.f, Vector3 _origin = {0.f,0.f,0.f})
+		void Initialize(float aspectRatio, float _fovAngle = 90.f, Vector3 _origin = { 0.f,0.f,0.f })
 		{
 			fovAngle = _fovAngle;
 			fov = tanf((fovAngle * TO_RADIANS) / 2.f);
 			aspectRatioVar = aspectRatio;
 			origin = _origin;
+			worldMatrix = CalculateCameraToWorld();
 		}
 
 		void CalculateViewMatrix()
 		{
 			// ONB - CameraToWorldMatrix
 			//ONB => invViewMatrix
-			
+
 			viewMatrix = CalculateCameraToWorld();
-			
+
 			//Inverse(ONB) => ViewMatrix
 			invViewMatrix = viewMatrix.Inverse();
 
@@ -64,15 +66,17 @@ namespace dae
 		void CalculateProjectionMatrix()
 		{
 			//TODO W3
-			
-			ProjectionMatrix = Matrix::CreatePerspectiveFovLH(fov, aspectRatioVar, near,far); 
-			worldViewProectionMatrix =  invViewMatrix * ProjectionMatrix;
+
+			ProjectionMatrix = Matrix::CreatePerspectiveFovLH(fov, aspectRatioVar, near, far);
+			worldViewProectionMatrix = invViewMatrix * ProjectionMatrix;
 			//DirectX Implementation => https://learn.microsoft.com/en-us/windows/win32/direct3d9/d3dxmatrixperspectivefovlh
 		}
 		Matrix CalculateCameraToWorld()
 		{
 			right = Vector3::Cross(Vector3::UnitY, forward).Normalized();
 			up = Vector3::Cross(forward, right);
+
+			worldMatrix = { right,up,forward,origin };
 
 			return
 			{

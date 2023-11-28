@@ -6,6 +6,7 @@
 #include "Camera.h"
 #include "DataTypes.h"
 
+
 struct SDL_Window;
 struct SDL_Surface;
 
@@ -34,10 +35,10 @@ namespace dae
 		void Render();
 
 		bool SaveBufferToImage() const;
-		void VertexTransformationFunction(const std::vector<Mesh>& meshes_in, std::vector<Mesh4AxisVertex>& meshes_out) const;
+		void VertexTransformationFunction(const std::vector<Mesh>& meshes_in, std::vector<Mesh4AxisVertex>& meshes_out);
 		Vector2 ConvertNDCtoScreen(const Vector3& ndc, int screenWidth, int screenHeight)const;
 		void ToggleShadows() { m_FinalColorEnabled = !m_FinalColorEnabled; };
-
+		ColorRGB PixelShading(const Vertex_Out& v);
 	private:
 		SDL_Window* m_pWindow{};
 

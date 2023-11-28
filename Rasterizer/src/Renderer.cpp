@@ -9,6 +9,7 @@
 #include "Utils.h"
 #include <iostream>
 
+
 using namespace dae;
 
 Renderer::Renderer(SDL_Window* pWindow) :
@@ -129,7 +130,7 @@ void Renderer::Render()
 	ColorRGB finalColor;
 	Triangle4 currentTriangle;
 
-	for (int i = 0; i < m_Meshes[0].indices.size() - 2; i+= 3)
+	for (int i = 0; i < m_Meshes[0].indices.size() - 2; i += 3)
 	{
 		if (m_Meshes[0].primitiveTopology == PrimitiveTopology::TriangleList)
 		{
@@ -139,7 +140,7 @@ void Renderer::Render()
 				meshes_screen[0].vertices_out[m_Meshes[0].indices[i + 1]],
 				meshes_screen[0].vertices_out[m_Meshes[0].indices[i + 2]]
 			};
-			
+
 		}
 		else if (i % 2 == 0)
 		{
@@ -177,62 +178,75 @@ void Renderer::Render()
 		{
 			for (int py = minY; py < maxY; ++py)
 			{
-				Vector2 P = { static_cast<float>(px) + 0.5f, static_cast<float>(py) + 0.5f };
+				Vertex_Out P = { {static_cast<float>(px) + 0.5f, static_cast<float>(py) + 0.5f,0,1} };
 
-				// Calculate vectors from vertices to the pixel
+				//// Calculate vectors from vertices to the pixel
 
-				const Vector2 edge = currentTriangle.vertex1.position.GetXY() - currentTriangle.vertex0.position.GetXY();// V1 - V0
-				const Vector2 edge1 = currentTriangle.vertex2.position.GetXY() - currentTriangle.vertex1.position.GetXY();// V2 - V1
-				const Vector2 edge2 = currentTriangle.vertex0.position.GetXY() - currentTriangle.vertex2.position.GetXY();
+				//const Vector2 edge = currentTriangle.vertex1.position.GetXY() - currentTriangle.vertex0.position.GetXY();// V1 - V0
+				//const Vector2 edge1 = currentTriangle.vertex2.position.GetXY() - currentTriangle.vertex1.position.GetXY();// V2 - V1
+				//const Vector2 edge2 = currentTriangle.vertex0.position.GetXY() - currentTriangle.vertex2.position.GetXY();
 
-				const Vector2 pointToVertex = P - currentTriangle.vertex0.position.GetXY();// P - V0
-				const Vector2 pointToVertex1 = P - currentTriangle.vertex1.position.GetXY();// P - V1
-				const Vector2 pointToVertex2 = P - currentTriangle.vertex2.position.GetXY();// P - V2
+				//const Vector2 pointToVertex = P - currentTriangle.vertex0.position.GetXY();// P - V0
+				//const Vector2 pointToVertex1 = P - currentTriangle.vertex1.position.GetXY();// P - V1
+				//const Vector2 pointToVertex2 = P - currentTriangle.vertex2.position.GetXY();// P - V2
 
-				// Calculate 2D cross products (signed areas)
+				//// Calculate 2D cross products (signed areas)
 
-				float cross1 = Vector2::Cross(pointToVertex2, edge2);	if (cross1 >= 0) continue;
+				//float cross1 = Vector2::Cross(pointToVertex2, edge2);	if (cross1 >= 0) continue;
 
-				float cross0 = Vector2::Cross(pointToVertex1, edge1);	if (cross0 >= 0) continue;
+				//float cross0 = Vector2::Cross(pointToVertex1, edge1);	if (cross0 >= 0) continue;
 
-				float cross2 = Vector2::Cross(pointToVertex, edge);	if (cross2 >= 0) continue;
-
-
-				// Check the signs of the cross products
-
-				const float totalParallelogramArea = cross0 + cross1 + cross2;
-
-				const float W0 = cross0 / totalParallelogramArea;
-				const float W1 = cross1 / totalParallelogramArea;
-				const float W2 = cross2 / totalParallelogramArea;
+				//float cross2 = Vector2::Cross(pointToVertex, edge);	if (cross2 >= 0) continue;
 
 
-				//interpolate through the depth values
-				float pixelDepth = 1 /
-					   (W0 / currentTriangle.vertex0.position.z +
-						W1 / currentTriangle.vertex1.position.z +
-						W2 / currentTriangle.vertex2.position.z);
+				//// Check the signs of the cross products
 
-				if (pixelDepth < 0 || pixelDepth > 1) continue;// culling
+				//const float totalParallelogramArea = cross0 + cross1 + cross2;
 
+				//const float W0 = cross0 / totalParallelogramArea;
+				//const float W1 = cross1 / totalParallelogramArea;
+				//const float W2 = cross2 / totalParallelogramArea;
+
+
+				////interpolate through the depth values
+				//float pixelDepth = 1 /
+				//	(W0 / currentTriangle.vertex0.position.z +
+				//		W1 / currentTriangle.vertex1.position.z +
+				//		W2 / currentTriangle.vertex2.position.z);
+
+				//if (pixelDepth < 0 || pixelDepth > 1) continue;// culling
+
+				//const int pixelIndex = { px + py * m_Width };
+
+				//if (pixelDepth > m_pDepthBuffer[pixelIndex]) continue;
+
+				//m_pDepthBuffer[pixelIndex] = pixelDepth;
+
+				////Utils::InterpolatePixel(currentTriangle.vertex0, currentTriangle.vertex1, currentTriangle.vertex2);
+
+				//float interpolatedDepth = 1 /
+				//		(W0 / currentTriangle.vertex0.position.w +
+				//		W1 / currentTriangle.vertex1.position.w +
+				//		W2 / currentTriangle.vertex2.position.w);
+
+				////interpolate through the depth values
+
+				//const Vector2 uvInterp = (currentTriangle.vertex0.uv * W0 / currentTriangle.vertex0.position.w +
+				//	currentTriangle.vertex1.uv * W1 / currentTriangle.vertex1.position.w +
+				//	currentTriangle.vertex2.uv * W2 / currentTriangle.vertex2.position.w) * interpolatedDepth;
+				Vector2 uvInterp = { 0,0 };
+				float pixelDepth = 0;
+
+				if (!Utils::IsPixelInterpolated(currentTriangle.vertex0, currentTriangle.vertex1, currentTriangle.vertex2, P, uvInterp, pixelDepth))
+				{
+					
+					continue;
+				}
 				const int pixelIndex = { px + py * m_Width };
 
 				if (pixelDepth > m_pDepthBuffer[pixelIndex]) continue;
 
 				m_pDepthBuffer[pixelIndex] = pixelDepth;
-
-				float interpolatedDepth = 1 /
-					   (W0 / currentTriangle.vertex0.position.w +
-						W1 / currentTriangle.vertex1.position.w +
-						W2 / currentTriangle.vertex2.position.w);
-
-				//interpolate through the depth values
-
-				const Vector2 uvInterp = (currentTriangle.vertex0.uv * W0 / currentTriangle.vertex0.position.w +
-					currentTriangle.vertex1.uv * W1 / currentTriangle.vertex1.position.w +
-					currentTriangle.vertex2.uv * W2 / currentTriangle.vertex2.position.w) * interpolatedDepth;
-
-
 
 				if (m_FinalColorEnabled)
 				{
@@ -256,7 +270,7 @@ void Renderer::Render()
 	SDL_UpdateWindowSurface(m_pWindow);
 }
 
-void Renderer::VertexTransformationFunction(const std::vector<Mesh>& meshes_in, std::vector<Mesh4AxisVertex>& meshes_out) const
+void Renderer::VertexTransformationFunction(const std::vector<Mesh>& meshes_in, std::vector<Mesh4AxisVertex>& meshes_out)
 {
 	for (int i = 0; i < meshes_in.size(); i++)
 	{
@@ -270,12 +284,9 @@ void Renderer::VertexTransformationFunction(const std::vector<Mesh>& meshes_in, 
 				Vector4{vertex.position.x,vertex.position.y,vertex.position.z,1},
 				vertex.color
 			};
-			///// can be a problem solving
-			/*Vertex newVertex3
-			{
-				Vector4{vertex.position.x,vertex.position.y,vertex.position.z,1},
-				vertex.color
-			};*/
+
+			newVertex.normal = m_Camera.worldMatrix.TransformVector(newVertex.normal);
+			newVertex.normal.Normalize();
 
 			newVertex.position = m_Camera.worldViewProectionMatrix.TransformPoint(newVertex.position);
 
@@ -287,6 +298,7 @@ void Renderer::VertexTransformationFunction(const std::vector<Mesh>& meshes_in, 
 			// Convert from NDC to screen
 			newVertex.position.x = ConvertNDCtoScreen(newVertex.position, m_Width, m_Height).x;
 			newVertex.position.y = ConvertNDCtoScreen(newVertex.position, m_Width, m_Height).y;
+
 
 			newVertex.uv = vertex.uv;
 			vertices_out.push_back(newVertex);
@@ -313,5 +325,6 @@ Vector2 Renderer::ConvertNDCtoScreen(const Vector3& ndc, int screenWidth, int sc
 	float screenSpaceY = (1.0f - ndc.y) / 2.0f * screenHeight;
 	return Vector2{ screenSpaceX, screenSpaceY };
 }
+
 
 
