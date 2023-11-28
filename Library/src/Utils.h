@@ -23,14 +23,12 @@ namespace dae
 
 			const float cosAngle = Vector3::Dot(v.normal, lightDirection);
 
-			if (cosAngle > 0)
-			{
-				return ColorRGB{ cosAngle, cosAngle, cosAngle };
-			}
+			return ColorRGB{ cosAngle, cosAngle, cosAngle };
+
 		}
 
 
-		bool IsPixelInterpolated(const Vertex_Out& v0, const Vertex_Out& v1, const Vertex_Out& v2, const Vertex_Out& pixelVector, Vector2& uvInterpolated, float& pixelDepth)
+		bool IsPixelInterpolated(const Vertex_Out& v0, const Vertex_Out& v1, const Vertex_Out& v2, Vertex_Out& pixelVector, Vector2& uvInterpolated, float& pixelDepth)
 		{
 			const Vector2 edge = v1.position.GetXY() - v0.position.GetXY();// V1 - V0
 			const Vector2 edge1 = v2.position.GetXY() - v1.position.GetXY();// V2 - V1
@@ -48,7 +46,6 @@ namespace dae
 
 			float cross2 = Vector2::Cross(pointToVertex, edge);	if (cross2 >= 0) return false;
 
-
 			// Check the signs of the cross products
 
 			const float totalParallelogramArea = cross0 + cross1 + cross2;
@@ -57,12 +54,11 @@ namespace dae
 			const float W1 = cross1 / totalParallelogramArea;
 			const float W2 = cross2 / totalParallelogramArea;
 
-
 			//interpolate through the depth values
 			pixelDepth = 1 /
-					(W0 / v0.position.z +
+				(W0 / v0.position.z +
 					W1 / v1.position.z +
-					W2 /v2.position.z);
+					W2 / v2.position.z);
 
 			if (pixelDepth < 0 || pixelDepth > 1) return false;// culling
 
@@ -74,9 +70,14 @@ namespace dae
 					W2 / v2.position.w);
 
 			uvInterpolated = (v0.uv * W0 / v0.position.w +
-				v1.uv * W1 /v1.position.w +
+				v1.uv * W1 / v1.position.w +
 				v2.uv * W2 / v2.position.w) * interpolatedDepth;
 
+			const Vector3 interpolatedNormal = (v0.normal * W0 / v0.position.w +
+				v1.normal * W1 / v1.position.w +
+				v2.normal * W2 / v2.position.w) * interpolatedDepth;
+
+			pixelVector.normal = interpolatedNormal.Normalized();
 
 			return true;
 		}

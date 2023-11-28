@@ -180,66 +180,11 @@ void Renderer::Render()
 			{
 				Vertex_Out P = { {static_cast<float>(px) + 0.5f, static_cast<float>(py) + 0.5f,0,1} };
 
-				//// Calculate vectors from vertices to the pixel
-
-				//const Vector2 edge = currentTriangle.vertex1.position.GetXY() - currentTriangle.vertex0.position.GetXY();// V1 - V0
-				//const Vector2 edge1 = currentTriangle.vertex2.position.GetXY() - currentTriangle.vertex1.position.GetXY();// V2 - V1
-				//const Vector2 edge2 = currentTriangle.vertex0.position.GetXY() - currentTriangle.vertex2.position.GetXY();
-
-				//const Vector2 pointToVertex = P - currentTriangle.vertex0.position.GetXY();// P - V0
-				//const Vector2 pointToVertex1 = P - currentTriangle.vertex1.position.GetXY();// P - V1
-				//const Vector2 pointToVertex2 = P - currentTriangle.vertex2.position.GetXY();// P - V2
-
-				//// Calculate 2D cross products (signed areas)
-
-				//float cross1 = Vector2::Cross(pointToVertex2, edge2);	if (cross1 >= 0) continue;
-
-				//float cross0 = Vector2::Cross(pointToVertex1, edge1);	if (cross0 >= 0) continue;
-
-				//float cross2 = Vector2::Cross(pointToVertex, edge);	if (cross2 >= 0) continue;
-
-
-				//// Check the signs of the cross products
-
-				//const float totalParallelogramArea = cross0 + cross1 + cross2;
-
-				//const float W0 = cross0 / totalParallelogramArea;
-				//const float W1 = cross1 / totalParallelogramArea;
-				//const float W2 = cross2 / totalParallelogramArea;
-
-
-				////interpolate through the depth values
-				//float pixelDepth = 1 /
-				//	(W0 / currentTriangle.vertex0.position.z +
-				//		W1 / currentTriangle.vertex1.position.z +
-				//		W2 / currentTriangle.vertex2.position.z);
-
-				//if (pixelDepth < 0 || pixelDepth > 1) continue;// culling
-
-				//const int pixelIndex = { px + py * m_Width };
-
-				//if (pixelDepth > m_pDepthBuffer[pixelIndex]) continue;
-
-				//m_pDepthBuffer[pixelIndex] = pixelDepth;
-
-				////Utils::InterpolatePixel(currentTriangle.vertex0, currentTriangle.vertex1, currentTriangle.vertex2);
-
-				//float interpolatedDepth = 1 /
-				//		(W0 / currentTriangle.vertex0.position.w +
-				//		W1 / currentTriangle.vertex1.position.w +
-				//		W2 / currentTriangle.vertex2.position.w);
-
-				////interpolate through the depth values
-
-				//const Vector2 uvInterp = (currentTriangle.vertex0.uv * W0 / currentTriangle.vertex0.position.w +
-				//	currentTriangle.vertex1.uv * W1 / currentTriangle.vertex1.position.w +
-				//	currentTriangle.vertex2.uv * W2 / currentTriangle.vertex2.position.w) * interpolatedDepth;
 				Vector2 uvInterp = { 0,0 };
 				float pixelDepth = 0;
 
 				if (!Utils::IsPixelInterpolated(currentTriangle.vertex0, currentTriangle.vertex1, currentTriangle.vertex2, P, uvInterp, pixelDepth))
 				{
-					
 					continue;
 				}
 				const int pixelIndex = { px + py * m_Width };
@@ -248,7 +193,9 @@ void Renderer::Render()
 
 				m_pDepthBuffer[pixelIndex] = pixelDepth;
 
-				if (m_FinalColorEnabled)
+				finalColor = Utils::PixelShading(P);
+
+				/*if (m_FinalColorEnabled)
 				{
 					finalColor = m_TextureVehicle->Sample(uvInterp);
 				}
@@ -256,7 +203,7 @@ void Renderer::Render()
 				{
 					const float remap = Remap(pixelDepth, 0.9f, 1.0f, 0.2f, 1.0f);
 					finalColor = ColorRGB{ remap, remap, remap };
-				}
+				}*/
 
 				m_pBackBufferPixels[px + (py * m_Width)] = SDL_MapRGB(m_pBackBuffer->format,
 					static_cast<uint8_t>(finalColor.r * 255),
@@ -282,11 +229,12 @@ void Renderer::VertexTransformationFunction(const std::vector<Mesh>& meshes_in, 
 			Vertex_Out newVertex
 			{
 				Vector4{vertex.position.x,vertex.position.y,vertex.position.z,1},
-				vertex.color
+				vertex.color,
+				vertex.uv,
+				vertex.normal,
+				vertex.tangent,
+				vertex.viewDirection
 			};
-
-			newVertex.normal = m_Camera.worldMatrix.TransformVector(newVertex.normal);
-			newVertex.normal.Normalize();
 
 			newVertex.position = m_Camera.worldViewProectionMatrix.TransformPoint(newVertex.position);
 
@@ -301,6 +249,10 @@ void Renderer::VertexTransformationFunction(const std::vector<Mesh>& meshes_in, 
 
 
 			newVertex.uv = vertex.uv;
+
+			newVertex.normal = m_Camera.worldMatrix.TransformVector(newVertex.normal);
+			newVertex.normal.Normalize();
+
 			vertices_out.push_back(newVertex);
 		}
 		newMesh =
