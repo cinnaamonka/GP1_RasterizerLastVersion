@@ -28,96 +28,50 @@ Renderer::Renderer(SDL_Window* pWindow) :
 	//Initialize Camera
 
 	m_AspectRatio = static_cast<float>(m_Width) / static_cast<float>(m_Height);
-	m_Camera.Initialize(m_AspectRatio, 60.f, { .0f,.0f,-30.f });
+	m_Camera.Initialize(m_AspectRatio, 45.f, { .0f,.0f,0.f });
 	m_pDepthBuffer.resize(m_Height * m_Width);
 	m_FinalColorEnabled = true;
 
 	//m_TextureVehicle = Texture::LoadFromFile("Resources/uv_grid_2.png");
 	m_TextureVehicle = Texture::LoadFromFile("Resources/vehicle_diffuse.png");
 	m_NormalMapVehicle = Texture::LoadFromFile("Resources/vehicle_normal.png");
+	m_SpecularColor = Texture::LoadFromFile("Resources/vehicle_specular.png");
+	m_GlosinessMap = Texture::LoadFromFile("Resources/vehicle_gloss.png");
 
 	Utils::ParseOBJ("Resources/vehicle.obj", m_Vehicle.vertices, m_Vehicle.indices);
 	m_Vehicle.primitiveTopology = PrimitiveTopology::TriangleList;
-//	m_Vehicle.RotateY(90 * TO_RADIANS);
+	const float Ztranslation = 50.0f;
+	m_Vehicle.Translate(Ztranslation);
 }
 
 Renderer::~Renderer()
 {
 	delete m_TextureVehicle;
+	delete m_NormalMapVehicle;
+	delete m_SpecularColor;
+	delete m_GlosinessMap;
 }
 
 void Renderer::Update(Timer* pTimer)
 {
 	m_Camera.Update(pTimer);
 
-	//constexpr  float speed{ 5 };
-	//m_Vehicle.RotateY(5 * TO_RADIANS * pTimer->GetElapsed() * speed);
+	if (m_CanBeRotated)
+	{
+		// ask
+	/*constexpr  float speed{ 5 };
+	m_Vehicle.RotateY(5 * TO_RADIANS * pTimer->GetElapsed() * speed);*/
+	}
 }
 
 void Renderer::Render()
 {
 	SDL_LockSurface(m_pBackBuffer);
 
-	//std::vector<Mesh> meshes_worldList
-	//{
-	//	Mesh
-	//	{
-	//		{
-	//			Vertex{{-3, 3, -2},{},{0,0}},
-	//			Vertex{{ 0,  3, -2},{},{0.5,0}},
-	//			Vertex{{ 3,  3, -2},{},{1,0}},
-	//			Vertex{{-3,  0, -2},{},{0,0.5}},
-	//			Vertex{{ 0,  0, -2},{},{0.5,0.5}},
-	//			Vertex{{ 3,  0, -2},{},{1,0.5}},
-	//			Vertex{{-3, -3, -2},{},{0,1}},
-	//			Vertex{{ 0, -3, -2},{},{0.5,1}},
-	//			Vertex{{ 3, -3, -2},{},{1,1}}
-	//		},
-	//		{
-	//			3, 0, 1,    1, 4, 3,    4, 1, 2,
-	//			2, 5, 4,    6, 3, 4,    4, 7, 6,
-	//			7, 4, 5,    5, 8, 7
-	//		},
-
-	//		PrimitiveTopology::TriangleList
-	//	}
-	//};
-
-	/*std::vector<Mesh> meshes_worldStrip
-	{
-		Mesh
-		{
-			{
-				Vertex_Out{{-3, 3, -2,1},ColorRGB{colors::White},{0,0}},
-				Vertex_Out{{ 0,  3, -2,1},ColorRGB{colors::White},{0.5,0}},
-				Vertex_Out{{ 3,  3, -2,1},ColorRGB{colors::White},{1,0}},
-				Vertex_Out{{-3,  0, -2,1},ColorRGB{colors::White},{0,0.5}},
-				Vertex_Out{{ 0,  0, -2,1},ColorRGB{colors::White},{0.5,0.5}},
-				Vertex_Out{{ 3,  0, -2,1},ColorRGB{colors::White},{1,0.5}},
-				Vertex_Out{{-3, -3, -2,1},ColorRGB{colors::White},{0,1}},
-				Vertex_Out{{ 0, -3, -2,1},ColorRGB{colors::White},{0.5,1}},
-				Vertex_Out{{ 3, -3, -2,1},ColorRGB{colors::White},{1,1}}
-			},
-			{
-				3, 0, 4, 1, 5, 2,
-				2, 6,
-				6, 3, 7, 4, 8, 5
-			},
-			PrimitiveTopology::TriangleStrip
-		}
-	};*/
-
-	//m_Meshes.push_back(m_Vehicle);
-	////m_Meshes.push_back(meshes_worldStrip[0]);
-
-	////m_Meshes.push_back(m_Vehicle);
-	////m_Meshes.push_back(m_Vehicle);
-	//VertexTransformationFunction(m_Meshes, meshes_screen);
-	////	m_Vehicle.vertices = meshes_screen[0].vertices_out;
 	meshes_screen.clear();
 	m_Meshes.clear();
 	m_Meshes.push_back(m_Vehicle);
-	VertexTransformationFunction(m_Meshes, meshes_screen);
+	VertexTransformationFunction(m_Meshes, meshes_screen, m_Camera);
 
 	SDL_FillRect(m_pBackBuffer, NULL, SDL_MapRGB(m_pBackBuffer->format,
 		static_cast<uint8_t>(100.f * 255),
@@ -186,31 +140,24 @@ void Renderer::Render()
 				Vector2 uvInterp = { 0,0 };
 				float pixelDepth = 0;
 
-				if (Utils::IsPixelInterpolated(currentTriangle.vertex0, currentTriangle.vertex1, currentTriangle.vertex2, P, uvInterp, pixelDepth) == false)
+				if (!Utils::IsPixelInterpolated(currentTriangle.vertex0, currentTriangle.vertex1, currentTriangle.vertex2, P, uvInterp, pixelDepth))
 				{
 					continue;
 				}
-			
+
 				const int pixelIndex = { px + py * m_Width };
 
 				if (pixelDepth > m_pDepthBuffer[pixelIndex]) continue;
 
 				m_pDepthBuffer[pixelIndex] = pixelDepth;
 
-				Vector3 binormal = Vector3::Cross(P.normal, P.tangent);
-
-				Matrix tangentSpaceAxis = Matrix{ P.tangent, binormal, P.normal, {0,0,0} };
-
-				P.color = m_TextureVehicle->Sample(uvInterp);
-				P.normal = { m_NormalMapVehicle->Sample(uvInterp).r,m_NormalMapVehicle->Sample(uvInterp).g,m_NormalMapVehicle->Sample(uvInterp).b };
-				P.normal /= 255;
-				P.normal = { 2 * P.normal.x - 1.f,2 * P.normal.y - 1.f,2 * P.normal.z - 1.f };
-
-				P.normal = tangentSpaceAxis.TransformVector(P.normal);
-
-				if (m_FinalColorEnabled)
+				if (m_NormalMapEnabled)
 				{
-					finalColor = Utils::PixelShading(P);
+					finalColor = m_NormalMapVehicle->Sample(uvInterp);
+				}
+				if (m_FinalColorEnabled && !m_NormalMapEnabled)
+				{
+					finalColor = PixelShading(P, uvInterp);
 				}
 				else
 				{
@@ -230,7 +177,7 @@ void Renderer::Render()
 	SDL_UpdateWindowSurface(m_pWindow);
 }
 
-void Renderer::VertexTransformationFunction(const std::vector<Mesh>& meshes_in, std::vector<Mesh4AxisVertex>& meshes_out)
+void Renderer::VertexTransformationFunction(const std::vector<Mesh>& meshes_in, std::vector<Mesh4AxisVertex>& meshes_out, const Camera camera)
 {
 	for (int i = 0; i < meshes_in.size(); i++)
 	{
@@ -249,10 +196,10 @@ void Renderer::VertexTransformationFunction(const std::vector<Mesh>& meshes_in, 
 				vertex.viewDirection
 			};
 
-			newVertex.position = m_Camera.worldViewProectionMatrix.TransformPoint(newVertex.position);
-			
 
-			//positive Z-axis is pointing into the screen
+			newVertex.position = m_Camera.worldViewProectionMatrix.TransformPoint(newVertex.position);
+
+			//perspective divide
 			newVertex.position.x = newVertex.position.x / newVertex.position.w;
 			newVertex.position.y = newVertex.position.y / newVertex.position.w;
 			newVertex.position.z = newVertex.position.z / newVertex.position.w;
@@ -261,13 +208,13 @@ void Renderer::VertexTransformationFunction(const std::vector<Mesh>& meshes_in, 
 			newVertex.position.x = ConvertNDCtoScreen(newVertex.position, m_Width, m_Height).x;
 			newVertex.position.y = ConvertNDCtoScreen(newVertex.position, m_Width, m_Height).y;
 
-
 			newVertex.uv = vertex.uv;
 
 			newVertex.normal = m_Camera.worldMatrix.TransformVector(newVertex.normal);
-			newVertex.normal.Normalize();
+			newVertex.tangent = m_Camera.worldMatrix.TransformVector(newVertex.tangent);
 
-			newVertex.tangent = vertex.tangent;
+			newVertex.viewDirection = camera.origin - newVertex.position;
+			newVertex.viewDirection.Normalize();
 
 			vertices_out.push_back(newVertex);
 		}
@@ -293,6 +240,89 @@ Vector2 Renderer::ConvertNDCtoScreen(const Vector3& ndc, int screenWidth, int sc
 	float screenSpaceY = (1.0f - ndc.y) / 2.0f * screenHeight;
 	return Vector2{ screenSpaceX, screenSpaceY };
 }
+ColorRGB Renderer::PixelShading(Vertex_Out& v, const Vector2& uvInterpolated)
+{
+	const Vector3 lightDirection = { .577f, -.577f, .577f };
+	const float lightIntensivity = 7.f;
+	const int shiniessValue = 25;
 
+	//normal mapping
+	Vector3 binormal = Vector3::Cross(v.normal, v.tangent);
+	Matrix tangentSpaceAxis = Matrix{ v.tangent, binormal, v.normal, {0,0,0} };
+	ColorRGB sampledNormal = m_NormalMapVehicle->Sample(uvInterpolated);
+
+	//sampledNormal mapping
+	sampledNormal = { sampledNormal.r / 255.f, sampledNormal.g / 255.f,sampledNormal.b / 255.f };
+	sampledNormal = { 2 * sampledNormal.r - 1.f,2 * sampledNormal.g - 1.f,2 * sampledNormal.b - 1.f };
+
+	const Vector3 resultNormal = tangentSpaceAxis.TransformVector(sampledNormal.r, sampledNormal.g, sampledNormal.b);
+
+	v.normal = resultNormal;
+
+
+	// lambert diffuse
+	const auto& sampledColor = m_TextureVehicle->Sample(uvInterpolated);
+	const ColorRGB diffuseColor = 7 * sampledColor;
+
+	ColorRGB lambertFinalColor = diffuseColor / float(M_PI);
+
+	const float cosAngle = Vector3::Dot(v.normal, lightDirection);
+
+	// phong 
+	const Vector3 reflect = Vector3::Reflect(lightDirection, v.normal);
+	const float cosAlpha = std::max(Vector3::Dot(reflect, v.viewDirection), 0.0f);
+
+	const ColorRGB specularity = m_SpecularColor->Sample(uvInterpolated);
+	float glosiness = m_GlosinessMap->Sample(uvInterpolated).r;
+
+	const ColorRGB specularColor = specularity * powf(cosAlpha, glosiness * shiniessValue) * colors::White;
+	const ColorRGB ambientOcclusion = { 0.025f, 0.025f,0.025f };
+
+	switch (m_CurrentLightingMode)
+	{
+	case LightingMode::ObservedArea:
+
+		return ColorRGB{ cosAngle, cosAngle, cosAngle };
+
+		break;
+
+	case LightingMode::Diffuse:
+
+		if (cosAngle < 0) return lambertFinalColor * ColorRGB{ -cosAngle, -cosAngle, -cosAngle };
+
+		return lambertFinalColor * ColorRGB{ cosAngle, cosAngle, cosAngle };
+
+		break;
+
+	case LightingMode::Specular:
+
+		if (cosAngle < 0) return specularColor * ColorRGB{ -cosAngle, -cosAngle, -cosAngle };
+		return specularColor * ColorRGB{ cosAngle, cosAngle, cosAngle };
+
+		break;
+
+	case LightingMode::Combined:
+
+		if (cosAngle < 0) return (lambertFinalColor + specularColor + ambientOcclusion) * ColorRGB { -cosAngle, -cosAngle, -cosAngle };
+		//ask
+		return (lambertFinalColor + specularColor + ambientOcclusion) * ColorRGB(cosAngle, cosAngle, cosAngle);
+
+		break;
+	}
+
+
+
+}
+void Renderer::CycleLightingMode()
+{
+	int currentLightingMode = static_cast<int>(m_CurrentLightingMode);
+	++currentLightingMode %= 4;
+	m_CurrentLightingMode = LightingMode{ currentLightingMode };
+}
+void Renderer::RotateModel()
+{
+	m_CanBeRotated = !m_CanBeRotated;
+
+}
 
 

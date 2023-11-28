@@ -56,6 +56,13 @@ namespace dae
 			for (Vertex& vertex : vertices)
 				vertex.position = worldMatrix.TransformPoint(vertex.position);
 		}
+		void Translate(float posZ)
+		{
+			worldMatrix = Matrix::CreateTranslation(Vector3(0, 0, posZ));
+
+			for (Vertex& vertex : vertices)
+				vertex.position = worldMatrix.TransformPoint(vertex.position);
+		}
 	};
 
 	struct Mesh4AxisVertex

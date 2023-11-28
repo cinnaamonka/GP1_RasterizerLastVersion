@@ -171,6 +171,13 @@ xcopy "$(ProjectDir)Resources\" "$(OutDir)\Resources\" /y /D</Command>
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Renderer.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="Rasterizer_ColorBuffer.bmp" />
+    <Image Include="Resources\vehicle_diffuse.png" />
+    <Image Include="Resources\vehicle_gloss.png" />
+    <Image Include="Resources\vehicle_normal.png" />
+    <Image Include="Resources\vehicle_specular.png" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

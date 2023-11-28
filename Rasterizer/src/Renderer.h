@@ -35,10 +35,13 @@ namespace dae
 		void Render();
 
 		bool SaveBufferToImage() const;
-		void VertexTransformationFunction(const std::vector<Mesh>& meshes_in, std::vector<Mesh4AxisVertex>& meshes_out);
+		void VertexTransformationFunction(const std::vector<Mesh>& meshes_in, std::vector<Mesh4AxisVertex>& meshes_out,const Camera camera);
 		Vector2 ConvertNDCtoScreen(const Vector3& ndc, int screenWidth, int screenHeight)const;
 		void ToggleShadows() { m_FinalColorEnabled = !m_FinalColorEnabled; };
-		ColorRGB PixelShading(const Vertex_Out& v);
+		void ToggleNormalMap() { m_NormalMapEnabled = !m_NormalMapEnabled; };
+		ColorRGB PixelShading(Vertex_Out& v, const Vector2& uvInterpolated);
+		void CycleLightingMode();
+		void RotateModel();
 	private:
 		SDL_Window* m_pWindow{};
 
@@ -51,6 +54,8 @@ namespace dae
 		Camera m_Camera{};
 		float m_AspectRatio;
 		bool m_FinalColorEnabled;
+		bool m_CanBeRotated = false;
+		bool m_NormalMapEnabled = false;
 
 		std::vector<Mesh> m_Meshes;
 		std::vector<Mesh4AxisVertex> meshes_screen;
@@ -59,12 +64,24 @@ namespace dae
 
 		Texture* m_TextureVehicle;
 		Texture* m_NormalMapVehicle;
+		Texture* m_SpecularColor;
+		Texture* m_GlosinessMap;
 
 		int m_Width{};
 		int m_Height{};
 
 		std::vector<float> m_pDepthBuffer;
 	
+		enum class LightingMode
+		{
+			ObservedArea,
+			Diffuse,
+			Specular,
+			Combined
+		};
+
+		LightingMode m_CurrentLightingMode = { LightingMode::ObservedArea };
+		
 	
 	};
 }

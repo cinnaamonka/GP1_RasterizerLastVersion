@@ -10,25 +10,6 @@ namespace dae
 {
 	namespace Utils
 	{
-		ColorRGB PixelShading(const Vertex_Out& v)
-		{
-			const Vector3 lightDirection = { .577f, -.577f, .577f };
-			
-			const float DiffuseReflectionCoefficient = 7.f;
-			const ColorRGB DiffuseColor = v.color;
-
-			ColorRGB lambertColor = DiffuseReflectionCoefficient * DiffuseColor;
-
-			ColorRGB lambert = lambertColor / float(M_PI);
-		
-			const float cosAngle = Vector3::Dot(v.normal, lightDirection.Normalized());
-
-			if(cosAngle < 0) return lambert * ColorRGB{ -cosAngle, -cosAngle, -cosAngle };
-
-			return lambert * ColorRGB{ cosAngle, cosAngle, cosAngle };
-
-		}
-
 
 		bool IsPixelInterpolated(const Vertex_Out& v0, const Vertex_Out& v1, const Vertex_Out& v2, Vertex_Out& pixelVector, Vector2& uvInterpolated, float& pixelDepth)
 		{
@@ -42,11 +23,11 @@ namespace dae
 
 			// Calculate 2D cross products (signed areas)
 
-			float cross1 = Vector2::Cross(pointToVertex2, edge2);	if (cross1 >= 0) return false;
+			float cross1 = Vector2::Cross(pointToVertex2, edge2);	if (cross1 > 0) return false;
 
-			float cross0 = Vector2::Cross(pointToVertex1, edge1);	if (cross0 >= 0) return false;
+			float cross0 = Vector2::Cross(pointToVertex1, edge1);	if (cross0 > 0) return false;
 
-			float cross2 = Vector2::Cross(pointToVertex, edge);	if (cross2 >= 0) return false;
+			float cross2 = Vector2::Cross(pointToVertex, edge);	if (cross2 > 0) return false;
 
 			// Check the signs of the cross products
 
@@ -79,7 +60,6 @@ namespace dae
 				v1.normal * W1 / v1.position.w +
 				v2.normal * W2 / v2.position.w) * interpolatedDepth;
 
-			pixelVector.normal = interpolatedNormal.Normalized();
 
 			pixelVector.color = (v0.color * W0 / v0.position.w +
 				v1.color * W1 / v1.position.w +
@@ -89,7 +69,9 @@ namespace dae
 				v1.tangent * W1 / v1.position.w +
 				v2.tangent * W2 / v2.position.w) * interpolatedDepth;
 
-
+			pixelVector.viewDirection = (v0.viewDirection * W0 / v0.position.w +
+				v1.viewDirection * W1 / v1.position.w +
+				v2.viewDirection * W2 / v2.position.w) * interpolatedDepth;
 
 			return true;
 		}

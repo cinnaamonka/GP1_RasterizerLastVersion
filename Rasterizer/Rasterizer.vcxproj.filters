@@ -18,4 +18,11 @@
       <Filter>Misc</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="Rasterizer_ColorBuffer.bmp" />
+    <Image Include="Resources\vehicle_specular.png" />
+    <Image Include="Resources\vehicle_normal.png" />
+    <Image Include="Resources\vehicle_gloss.png" />
+    <Image Include="Resources\vehicle_diffuse.png" />
+  </ItemGroup>
 </Project>
