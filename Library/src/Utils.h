@@ -13,17 +13,19 @@ namespace dae
 		ColorRGB PixelShading(const Vertex_Out& v)
 		{
 			const Vector3 lightDirection = { .577f, -.577f, .577f };
-
-			const float DiffuseReflectionCoefficient = 1.f;
-			const ColorRGB DiffuseColor = { 1.f,1.f,1.f };
+			
+			const float DiffuseReflectionCoefficient = 7.f;
+			const ColorRGB DiffuseColor = v.color;
 
 			ColorRGB lambertColor = DiffuseReflectionCoefficient * DiffuseColor;
 
 			ColorRGB lambert = lambertColor / float(M_PI);
+		
+			const float cosAngle = Vector3::Dot(v.normal, lightDirection.Normalized());
 
-			const float cosAngle = Vector3::Dot(v.normal, lightDirection);
+			if(cosAngle < 0) return lambert * ColorRGB{ -cosAngle, -cosAngle, -cosAngle };
 
-			return ColorRGB{ cosAngle, cosAngle, cosAngle };
+			return lambert * ColorRGB{ cosAngle, cosAngle, cosAngle };
 
 		}
 
@@ -78,6 +80,16 @@ namespace dae
 				v2.normal * W2 / v2.position.w) * interpolatedDepth;
 
 			pixelVector.normal = interpolatedNormal.Normalized();
+
+			pixelVector.color = (v0.color * W0 / v0.position.w +
+				v1.color * W1 / v1.position.w +
+				v2.color * W2 / v2.position.w) * interpolatedDepth;
+
+			pixelVector.tangent = (v0.tangent * W0 / v0.position.w +
+				v1.tangent * W1 / v1.position.w +
+				v2.tangent * W2 / v2.position.w) * interpolatedDepth;
+
+
 
 			return true;
 		}

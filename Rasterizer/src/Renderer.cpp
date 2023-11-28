@@ -33,10 +33,12 @@ Renderer::Renderer(SDL_Window* pWindow) :
 	m_FinalColorEnabled = true;
 
 	//m_TextureVehicle = Texture::LoadFromFile("Resources/uv_grid_2.png");
-	m_TextureVehicle = Texture::LoadFromFile("Resources/tuktuk.png");
+	m_TextureVehicle = Texture::LoadFromFile("Resources/vehicle_diffuse.png");
+	m_NormalMapVehicle = Texture::LoadFromFile("Resources/vehicle_normal.png");
 
-	Utils::ParseOBJ("Resources/tuktuk.obj", m_Vehicle.vertices, m_Vehicle.indices);
+	Utils::ParseOBJ("Resources/vehicle.obj", m_Vehicle.vertices, m_Vehicle.indices);
 	m_Vehicle.primitiveTopology = PrimitiveTopology::TriangleList;
+	m_Vehicle.RotateY(90 * TO_RADIANS);
 }
 
 Renderer::~Renderer()
@@ -47,8 +49,9 @@ Renderer::~Renderer()
 void Renderer::Update(Timer* pTimer)
 {
 	m_Camera.Update(pTimer);
-	constexpr  float speed{ 5 };
-	m_Vehicle.RotateY(5 * TO_RADIANS * pTimer->GetElapsed() * speed);
+
+	//constexpr  float speed{ 5 };
+	//m_Vehicle.RotateY(5 * TO_RADIANS * pTimer->GetElapsed() * speed);
 }
 
 void Renderer::Render()
@@ -193,18 +196,25 @@ void Renderer::Render()
 
 				m_pDepthBuffer[pixelIndex] = pixelDepth;
 
-				finalColor = Utils::PixelShading(P);
+				Vector3 binormal = Vector3::Cross(P.normal, P.tangent);
 
-				/*if (m_FinalColorEnabled)
+				Matrix tangentSpaceAxis = Matrix{ P.tangent, binormal, P.normal, {0,0,0} };
+
+				P.color = m_TextureVehicle->Sample(uvInterp);
+				P.normal = { m_NormalMapVehicle->Sample(uvInterp).r,m_NormalMapVehicle->Sample(uvInterp).g,m_NormalMapVehicle->Sample(uvInterp).b };
+
+				P.normal = tangentSpaceAxis.TransformVector(P.normal);
+
+				if (m_FinalColorEnabled)
 				{
-					finalColor = m_TextureVehicle->Sample(uvInterp);
+					finalColor = Utils::PixelShading(P);
 				}
 				else
 				{
 					const float remap = Remap(pixelDepth, 0.9f, 1.0f, 0.2f, 1.0f);
 					finalColor = ColorRGB{ remap, remap, remap };
-				}*/
-
+				}
+				finalColor.MaxToOne();
 				m_pBackBufferPixels[px + (py * m_Width)] = SDL_MapRGB(m_pBackBuffer->format,
 					static_cast<uint8_t>(finalColor.r * 255),
 					static_cast<uint8_t>(finalColor.g * 255),
@@ -238,6 +248,8 @@ void Renderer::VertexTransformationFunction(const std::vector<Mesh>& meshes_in, 
 
 			newVertex.position = m_Camera.worldViewProectionMatrix.TransformPoint(newVertex.position);
 
+			
+
 			//positive Z-axis is pointing into the screen
 			newVertex.position.x = newVertex.position.x / newVertex.position.w;
 			newVertex.position.y = newVertex.position.y / newVertex.position.w;
@@ -252,6 +264,8 @@ void Renderer::VertexTransformationFunction(const std::vector<Mesh>& meshes_in, 
 
 			newVertex.normal = m_Camera.worldMatrix.TransformVector(newVertex.normal);
 			newVertex.normal.Normalize();
+
+			newVertex.tangent = vertex.tangent;
 
 			vertices_out.push_back(newVertex);
 		}

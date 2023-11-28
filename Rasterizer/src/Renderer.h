@@ -58,6 +58,7 @@ namespace dae
 		Mesh m_Vehicle{};
 
 		Texture* m_TextureVehicle;
+		Texture* m_NormalMapVehicle;
 
 		int m_Width{};
 		int m_Height{};
