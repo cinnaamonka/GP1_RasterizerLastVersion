@@ -38,7 +38,7 @@ Renderer::Renderer(SDL_Window* pWindow) :
 
 	Utils::ParseOBJ("Resources/vehicle.obj", m_Vehicle.vertices, m_Vehicle.indices);
 	m_Vehicle.primitiveTopology = PrimitiveTopology::TriangleList;
-	m_Vehicle.RotateY(90 * TO_RADIANS);
+//	m_Vehicle.RotateY(90 * TO_RADIANS);
 }
 
 Renderer::~Renderer()
@@ -186,10 +186,11 @@ void Renderer::Render()
 				Vector2 uvInterp = { 0,0 };
 				float pixelDepth = 0;
 
-				if (!Utils::IsPixelInterpolated(currentTriangle.vertex0, currentTriangle.vertex1, currentTriangle.vertex2, P, uvInterp, pixelDepth))
+				if (Utils::IsPixelInterpolated(currentTriangle.vertex0, currentTriangle.vertex1, currentTriangle.vertex2, P, uvInterp, pixelDepth) == false)
 				{
 					continue;
 				}
+			
 				const int pixelIndex = { px + py * m_Width };
 
 				if (pixelDepth > m_pDepthBuffer[pixelIndex]) continue;
@@ -202,6 +203,8 @@ void Renderer::Render()
 
 				P.color = m_TextureVehicle->Sample(uvInterp);
 				P.normal = { m_NormalMapVehicle->Sample(uvInterp).r,m_NormalMapVehicle->Sample(uvInterp).g,m_NormalMapVehicle->Sample(uvInterp).b };
+				P.normal /= 255;
+				P.normal = { 2 * P.normal.x - 1.f,2 * P.normal.y - 1.f,2 * P.normal.z - 1.f };
 
 				P.normal = tangentSpaceAxis.TransformVector(P.normal);
 
@@ -247,7 +250,6 @@ void Renderer::VertexTransformationFunction(const std::vector<Mesh>& meshes_in, 
 			};
 
 			newVertex.position = m_Camera.worldViewProectionMatrix.TransformPoint(newVertex.position);
-
 			
 
 			//positive Z-axis is pointing into the screen

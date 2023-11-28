@@ -88,10 +88,8 @@ namespace dae
 		}
 		void Update(const Timer* pTimer)
 		{
-
-
 			const float deltaTime = pTimer->GetElapsed();
-			const float step = 1.0f;
+			const float step = 15.0f;
 
 			const Vector3 movementDirection{};
 
