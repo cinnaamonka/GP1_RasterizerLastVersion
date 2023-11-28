@@ -266,10 +266,10 @@ ColorRGB Renderer::PixelShading(Vertex_Out& v, const Vector2& uvInterpolated)
 
 	ColorRGB lambertFinalColor = diffuseColor / float(M_PI);
 
-	const float cosAngle = Vector3::Dot(v.normal, lightDirection);
+	const float cosAngle = Vector3::Dot(v.normal, lightDirection.Normalized());
 
 	// phong 
-	const Vector3 reflect = Vector3::Reflect(lightDirection, v.normal);
+	const Vector3 reflect = Vector3::Reflect(lightDirection.Normalized(), v.normal);
 	const float cosAlpha = std::max(Vector3::Dot(reflect, v.viewDirection), 0.0f);
 
 	const ColorRGB specularity = m_SpecularColor->Sample(uvInterpolated);
