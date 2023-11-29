@@ -41,7 +41,9 @@ Renderer::Renderer(SDL_Window* pWindow) :
 	Utils::ParseOBJ("Resources/vehicle.obj", m_Vehicle.vertices, m_Vehicle.indices);
 	m_Vehicle.primitiveTopology = PrimitiveTopology::TriangleList;
 	const float Ztranslation = 50.0f;
+	//m_Vehicle.RotateY(90);
 	m_Vehicle.Translate(Ztranslation);
+	
 }
 
 Renderer::~Renderer()
@@ -58,11 +60,8 @@ void Renderer::Update(Timer* pTimer)
 
 	if (m_CanBeRotated)
 	{
-		//constexpr  float speed{ 5 };
-	//m_Vehicle.RotateY(5 * TO_RADIANS * pTimer->GetElapsed() * speed);
-
+		m_Meshes[0].worldMatrix = Matrix::CreateRotationY(5 * TO_RADIANS * pTimer->GetElapsed() * 5);
 	}
-	
 }
 
 void Renderer::Render()
@@ -196,9 +195,8 @@ void Renderer::VertexTransformationFunction(const std::vector<Mesh>& meshes_in, 
 				vertex.tangent,
 				vertex.viewDirection
 			};
-
-
-			newVertex.position = m_Camera.worldViewProectionMatrix.TransformPoint(newVertex.position);
+			const Matrix worldViewProjectionMatrix{ m_Vehicle.worldMatrix *  m_Camera.worldViewProectionMatrix };
+			newVertex.position = worldViewProjectionMatrix.TransformPoint(newVertex.position);
 
 			//perspective divide
 			newVertex.position.x = newVertex.position.x / newVertex.position.w;
@@ -211,9 +209,9 @@ void Renderer::VertexTransformationFunction(const std::vector<Mesh>& meshes_in, 
 
 			newVertex.uv = vertex.uv;
 
-			newVertex.normal = m_Camera.worldMatrix.TransformVector(newVertex.normal);
-			newVertex.tangent = m_Camera.worldMatrix.TransformVector(newVertex.tangent);
-
+			newVertex.normal = m_Vehicle.worldMatrix.TransformVector(newVertex.normal);
+			newVertex.tangent = m_Vehicle.worldMatrix.TransformVector(newVertex.tangent);
+			
 			newVertex.viewDirection = camera.origin - newVertex.position;
 			newVertex.viewDirection.Normalize();
 
@@ -243,7 +241,9 @@ Vector2 Renderer::ConvertNDCtoScreen(const Vector3& ndc, int screenWidth, int sc
 }
 ColorRGB Renderer::PixelShading(Vertex_Out& v, const Vector2& uvInterpolated)
 {
-	const Vector3 lightDirection = { .577f, -.577f, .577f };
+	const Vector3 lightDirection = { -.577f, .577f, -.577f };
+	// for some reason works only like this 
+	//const Vector3 lightDirection = { .577f,-.577f, .577f };
 	const float lightIntensivity = 7.f;
 	const int shiniessValue = 25;
 
@@ -259,14 +259,14 @@ ColorRGB Renderer::PixelShading(Vertex_Out& v, const Vector2& uvInterpolated)
 
 	// lambert diffuse
 	const auto& sampledColor = m_TextureVehicle->Sample(uvInterpolated);
-	const ColorRGB diffuseColor = 7 * sampledColor;
+	const ColorRGB diffuseColor = lightIntensivity * sampledColor;
 
 	ColorRGB lambertFinalColor = diffuseColor / float(M_PI);
 
-	const float cosAngle = Vector3::Dot(v.normal, lightDirection.Normalized());
+	const float cosAngle = Vector3::Dot(v.normal, lightDirection);
 
 	// phong 
-	const Vector3 reflect = Vector3::Reflect(lightDirection.Normalized(), v.normal);
+	const Vector3 reflect = Vector3::Reflect(lightDirection, v.normal);
 	const float cosAlpha = std::max(Vector3::Dot(reflect, v.viewDirection), 0.0f);
 
 	const ColorRGB specularity = m_SpecularColor->Sample(uvInterpolated);
@@ -293,20 +293,19 @@ ColorRGB Renderer::PixelShading(Vertex_Out& v, const Vector2& uvInterpolated)
 
 	case LightingMode::Specular:
 
-		if (cosAngle < 0) return specularColor * ColorRGB{ -cosAngle, -cosAngle, -cosAngle };
+		if (cosAngle < 0)return { 0,0,0 };
 		return specularColor * ColorRGB{ cosAngle, cosAngle, cosAngle };
 
 		break;
 
 	case LightingMode::Combined:
 
-		if (cosAngle < 0) return (lambertFinalColor + specularColor + ambientOcclusion) * ColorRGB { -cosAngle, -cosAngle, -cosAngle };
+		if (cosAngle < 0)return { 0,0,0 };
 		//ask
 		return (lambertFinalColor + specularColor + ambientOcclusion) * ColorRGB(cosAngle, cosAngle, cosAngle);
 
 		break;
 	}
-
 
 
 }

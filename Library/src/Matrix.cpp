@@ -213,7 +213,6 @@ namespace dae {
 			{0, 0, 0, 1}
 		};
 	}
-
 	Matrix Matrix::CreateRotationY(float yaw)
 	{
 		return {

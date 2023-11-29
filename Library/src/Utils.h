@@ -59,7 +59,7 @@ namespace dae
 			pixelVector.normal = (v0.normal * W0 / v0.position.w +
 				v1.normal * W1 / v1.position.w +
 				v2.normal * W2 / v2.position.w) * interpolatedDepth;
-
+			pixelVector.normal.Normalize();
 
 			pixelVector.color = (v0.color * W0 / v0.position.w +
 				v1.color * W1 / v1.position.w +
