@@ -53,8 +53,8 @@ namespace dae
 		{
 			worldMatrix = Matrix::CreateRotationY(yaw);
 
-			for (Vertex& vertex : vertices)
-				vertex.position = worldMatrix.TransformPoint(vertex.position);
+		/*	for (Vertex& vertex : vertices)
+				vertex.position = worldMatrix.TransformPoint(vertex.position);*/
 		}
 		void Translate(float posZ)
 		{

@@ -28,7 +28,7 @@ Renderer::Renderer(SDL_Window* pWindow) :
 	//Initialize Camera
 
 	m_AspectRatio = static_cast<float>(m_Width) / static_cast<float>(m_Height);
-	m_Camera.Initialize(m_AspectRatio, 45.f, { .0f,.0f,0.f });
+	m_Camera.Initialize(m_AspectRatio, 60.f, { .0f,.0f,0.f });
 	m_pDepthBuffer.resize(m_Height * m_Width);
 	m_FinalColorEnabled = true;
 
@@ -58,10 +58,11 @@ void Renderer::Update(Timer* pTimer)
 
 	if (m_CanBeRotated)
 	{
-		// ask
-	/*constexpr  float speed{ 5 };
-	m_Vehicle.RotateY(5 * TO_RADIANS * pTimer->GetElapsed() * speed);*/
+		//constexpr  float speed{ 5 };
+	//m_Vehicle.RotateY(5 * TO_RADIANS * pTimer->GetElapsed() * speed);
+
 	}
+	
 }
 
 void Renderer::Render()
@@ -155,11 +156,11 @@ void Renderer::Render()
 				{
 					finalColor = m_NormalMapVehicle->Sample(uvInterp);
 				}
-				if (m_FinalColorEnabled && !m_NormalMapEnabled)
+				else if (m_FinalColorEnabled && !m_NormalMapEnabled)
 				{
 					finalColor = PixelShading(P, uvInterp);
 				}
-				else
+				else if(!m_FinalColorEnabled && !m_NormalMapEnabled)
 				{
 					const float remap = Remap(pixelDepth, 0.9f, 1.0f, 0.2f, 1.0f);
 					finalColor = ColorRGB{ remap, remap, remap };
@@ -249,13 +250,9 @@ ColorRGB Renderer::PixelShading(Vertex_Out& v, const Vector2& uvInterpolated)
 	//normal mapping
 	Vector3 binormal = Vector3::Cross(v.normal, v.tangent);
 	Matrix tangentSpaceAxis = Matrix{ v.tangent, binormal, v.normal, {0,0,0} };
-	ColorRGB sampledNormal = m_NormalMapVehicle->Sample(uvInterpolated);
+	Vector3 sampledNormal = m_NormalMapVehicle->SampleNormalMap(uvInterpolated);
 
-	//sampledNormal mapping
-	sampledNormal = { sampledNormal.r / 255.f, sampledNormal.g / 255.f,sampledNormal.b / 255.f };
-	sampledNormal = { 2 * sampledNormal.r - 1.f,2 * sampledNormal.g - 1.f,2 * sampledNormal.b - 1.f };
-
-	const Vector3 resultNormal = tangentSpaceAxis.TransformVector(sampledNormal.r, sampledNormal.g, sampledNormal.b);
+	const Vector3 resultNormal = tangentSpaceAxis.TransformVector(sampledNormal.x, sampledNormal.y, sampledNormal.z);
 
 	v.normal = resultNormal;
 
@@ -288,7 +285,7 @@ ColorRGB Renderer::PixelShading(Vertex_Out& v, const Vector2& uvInterpolated)
 
 	case LightingMode::Diffuse:
 
-		if (cosAngle < 0) return lambertFinalColor * ColorRGB{ -cosAngle, -cosAngle, -cosAngle };
+		if (cosAngle < 0) return { 0,0,0 };
 
 		return lambertFinalColor * ColorRGB{ cosAngle, cosAngle, cosAngle };
 

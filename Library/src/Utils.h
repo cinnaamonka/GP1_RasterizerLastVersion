@@ -56,7 +56,7 @@ namespace dae
 				v1.uv * W1 / v1.position.w +
 				v2.uv * W2 / v2.position.w) * interpolatedDepth;
 
-			const Vector3 interpolatedNormal = (v0.normal * W0 / v0.position.w +
+			pixelVector.normal = (v0.normal * W0 / v0.position.w +
 				v1.normal * W1 / v1.position.w +
 				v2.normal * W2 / v2.position.w) * interpolatedDepth;
 

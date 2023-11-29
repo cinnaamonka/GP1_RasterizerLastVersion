@@ -53,7 +53,7 @@ namespace dae
 		std::vector<std::vector<Vector2>> m_pTriangles;
 		Camera m_Camera{};
 		float m_AspectRatio;
-		bool m_FinalColorEnabled;
+		bool m_FinalColorEnabled = true;
 		bool m_CanBeRotated = false;
 		bool m_NormalMapEnabled = false;
 
