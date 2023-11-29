@@ -82,6 +82,7 @@ namespace dae
 
 		LightingMode m_CurrentLightingMode = { LightingMode::ObservedArea };
 		
+		Matrix m_Translation;
 	
 	};
 }

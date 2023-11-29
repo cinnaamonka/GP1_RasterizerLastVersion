@@ -28,7 +28,7 @@ Renderer::Renderer(SDL_Window* pWindow) :
 	//Initialize Camera
 
 	m_AspectRatio = static_cast<float>(m_Width) / static_cast<float>(m_Height);
-	m_Camera.Initialize(m_AspectRatio, 60.f, { .0f,.0f,0.f });
+	m_Camera.Initialize(m_AspectRatio, 45.f, { .0f,.0f,0.f });
 	m_pDepthBuffer.resize(m_Height * m_Width);
 	m_FinalColorEnabled = true;
 
@@ -41,8 +41,8 @@ Renderer::Renderer(SDL_Window* pWindow) :
 	Utils::ParseOBJ("Resources/vehicle.obj", m_Vehicle.vertices, m_Vehicle.indices);
 	m_Vehicle.primitiveTopology = PrimitiveTopology::TriangleList;
 	const float Ztranslation = 50.0f;
-	//m_Vehicle.RotateY(90);
-	m_Vehicle.Translate(Ztranslation);
+
+	m_Translation =  Matrix::CreateTranslation(Vector3(0, 0, Ztranslation));
 	
 }
 
@@ -60,8 +60,13 @@ void Renderer::Update(Timer* pTimer)
 
 	if (m_CanBeRotated)
 	{
-		m_Meshes[0].worldMatrix = Matrix::CreateRotationY(5 * TO_RADIANS * pTimer->GetElapsed() * 5);
+		m_Vehicle.worldMatrix = Matrix::CreateRotationY(PI_DIV_2 * pTimer->GetTotal()) * m_Translation;
 	}
+	else
+	{
+		m_Vehicle.worldMatrix = m_Translation;
+	}
+	
 }
 
 void Renderer::Render()
@@ -84,7 +89,7 @@ void Renderer::Render()
 
 	const SDL_Rect clearRect = { 0, 0, m_Width, m_Height };
 	//clearing the back buffer
-	ColorRGB finalColor;
+	ColorRGB finalColor = {0,0,0};
 	Triangle4 currentTriangle;
 
 	for (int i = 0; i < m_Meshes[0].indices.size() - 2; i += 3)
@@ -151,7 +156,9 @@ void Renderer::Render()
 
 				m_pDepthBuffer[pixelIndex] = pixelDepth;
 
-				if (m_NormalMapEnabled)
+				finalColor = PixelShading(P, uvInterp);
+
+				/*if (m_NormalMapEnabled)
 				{
 					finalColor = m_NormalMapVehicle->Sample(uvInterp);
 				}
@@ -163,7 +170,7 @@ void Renderer::Render()
 				{
 					const float remap = Remap(pixelDepth, 0.9f, 1.0f, 0.2f, 1.0f);
 					finalColor = ColorRGB{ remap, remap, remap };
-				}
+				}*/
 				finalColor.MaxToOne();
 				m_pBackBufferPixels[px + (py * m_Width)] = SDL_MapRGB(m_pBackBuffer->format,
 					static_cast<uint8_t>(finalColor.r * 255),
@@ -195,7 +202,7 @@ void Renderer::VertexTransformationFunction(const std::vector<Mesh>& meshes_in, 
 				vertex.tangent,
 				vertex.viewDirection
 			};
-			const Matrix worldViewProjectionMatrix{ m_Vehicle.worldMatrix *  m_Camera.worldViewProectionMatrix };
+			const Matrix worldViewProjectionMatrix{ meshes_in[i].worldMatrix * m_Camera.worldViewProectionMatrix};
 			newVertex.position = worldViewProjectionMatrix.TransformPoint(newVertex.position);
 
 			//perspective divide
@@ -247,66 +254,89 @@ ColorRGB Renderer::PixelShading(Vertex_Out& v, const Vector2& uvInterpolated)
 	const float lightIntensivity = 7.f;
 	const int shiniessValue = 25;
 
-	//normal mapping
-	Vector3 binormal = Vector3::Cross(v.normal, v.tangent);
-	Matrix tangentSpaceAxis = Matrix{ v.tangent, binormal, v.normal, {0,0,0} };
-	Vector3 sampledNormal = m_NormalMapVehicle->SampleNormalMap(uvInterpolated);
+	////normal mapping
+	//Vector3 binormal = Vector3::Cross(v.normal, v.tangent);
+	//Matrix tangentSpaceAxis = Matrix{ v.tangent, binormal, v.normal, {0,0,0} };
+	//ColorRGB sampledNormal = m_NormalMapVehicle->Sample(uvInterpolated);
 
-	const Vector3 resultNormal = tangentSpaceAxis.TransformVector(sampledNormal.x, sampledNormal.y, sampledNormal.z);
+	//sampledNormal = 2 * sampledNormal - ColorRGB{ 1,1,1 };
 
-	v.normal = resultNormal;
+	//const Vector3 resultNormal = tangentSpaceAxis.TransformVector(sampledNormal.r, sampledNormal.g, sampledNormal.b);
 
+	//
+	//// lambert diffuse
+	//const auto& sampledColor = m_TextureVehicle->Sample(uvInterpolated);
+	//const ColorRGB diffuseColor = lightIntensivity * sampledColor;
 
-	// lambert diffuse
-	const auto& sampledColor = m_TextureVehicle->Sample(uvInterpolated);
-	const ColorRGB diffuseColor = lightIntensivity * sampledColor;
+	//ColorRGB lambertFinalColor = diffuseColor / float(M_PI);
 
-	ColorRGB lambertFinalColor = diffuseColor / float(M_PI);
+	// float cosAngle = Vector3::Dot(resultNormal, lightDirection);
 
-	const float cosAngle = Vector3::Dot(v.normal, lightDirection);
+	//
+	//// phong 
+	//const Vector3 reflect = Vector3::Reflect(lightDirection, resultNormal);
+	//const float cosAlpha = std::max(Vector3::Dot(reflect, v.viewDirection), 0.0f);
 
-	// phong 
-	const Vector3 reflect = Vector3::Reflect(lightDirection, v.normal);
-	const float cosAlpha = std::max(Vector3::Dot(reflect, v.viewDirection), 0.0f);
+	//const ColorRGB specularity = m_SpecularColor->Sample(uvInterpolated);
+	//float glosiness = m_GlosinessMap->Sample(uvInterpolated).r;
 
-	const ColorRGB specularity = m_SpecularColor->Sample(uvInterpolated);
-	float glosiness = m_GlosinessMap->Sample(uvInterpolated).r;
-
-	const ColorRGB specularColor = specularity * powf(cosAlpha, glosiness * shiniessValue) * colors::White;
+	//const ColorRGB specularColor = specularity * powf(cosAlpha, glosiness * shiniessValue) * colors::White;
 	const ColorRGB ambientOcclusion = { 0.025f, 0.025f,0.025f };
 
-	switch (m_CurrentLightingMode)
-	{
-	case LightingMode::ObservedArea:
+	//switch (m_CurrentLightingMode)
+	//{
+	//case LightingMode::ObservedArea:
 
-		return ColorRGB{ cosAngle, cosAngle, cosAngle };
+		// Sampling the normal from the normal map
+		ColorRGB normalMapSample{ m_NormalMapVehicle->Sample(uvInterpolated) };
+		// Remapping the value from [0,1] to [-1,1] (i am already remapping from [0,255] in the Sample function
+		normalMapSample = 2.f * normalMapSample - ColorRGB{ 1.f,1.f,1.f };
 
-		break;
+		Vector3 sampledNormal{ Vector3{normalMapSample.r,normalMapSample.g,normalMapSample.b} };
 
-	case LightingMode::Diffuse:
+		// Transforming it in the correct tangent space
+		const Vector3 binormal{ Vector3::Cross(v.normal,v.tangent) };
+		Matrix tangentSpaceTransfMatrix{ v.tangent, binormal, v.normal,Vector3{0,0,0} };
+		sampledNormal = tangentSpaceTransfMatrix.TransformVector(sampledNormal);
 
-		if (cosAngle < 0) return { 0,0,0 };
+		float cosAngle = Vector3::Dot(sampledNormal, lightDirection);
 
-		return lambertFinalColor * ColorRGB{ cosAngle, cosAngle, cosAngle };
+		if (cosAngle >= 0)
+		{
+			const float kd{ 1 };
+			const ColorRGB cd{ colors::Gray };
+			const ColorRGB BRDF{ cd * kd / float(M_PI) };
+			return lightIntensivity * BRDF * ColorRGB{ cosAngle,cosAngle,cosAngle };
+		}
+		
 
-		break;
+		//break;
 
-	case LightingMode::Specular:
+		//case LightingMode::Diffuse:
 
-		if (cosAngle < 0)return { 0,0,0 };
-		return specularColor * ColorRGB{ cosAngle, cosAngle, cosAngle };
+		//	if (cosAngle < 0) return { 0,0,0 };
 
-		break;
+		//	return lambertFinalColor * ColorRGB{ cosAngle, cosAngle, cosAngle };
 
-	case LightingMode::Combined:
+		//	break;
 
-		if (cosAngle < 0)return { 0,0,0 };
-		//ask
-		return (lambertFinalColor + specularColor + ambientOcclusion) * ColorRGB(cosAngle, cosAngle, cosAngle);
+		//case LightingMode::Specular:
 
-		break;
-	}
+		//	if (cosAngle < 0)return { 0,0,0 };
+		//	return specularColor * ColorRGB{ cosAngle, cosAngle, cosAngle };
 
+		//	break;
+
+		//case LightingMode::Combined:
+
+		//	if (cosAngle < 0)return { 0,0,0 };
+		//	//ask
+		//	return (lambertFinalColor + specularColor + ambientOcclusion) * ColorRGB(cosAngle, cosAngle, cosAngle);
+
+		//	break;
+		//}
+	//}
+	return ColorRGB{};
 
 }
 void Renderer::CycleLightingMode()
