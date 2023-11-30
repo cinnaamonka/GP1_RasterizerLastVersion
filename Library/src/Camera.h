@@ -30,8 +30,8 @@ namespace dae
 		float totalYaw{};
 
 
-		float near = 1.f;
-		float far = 1000.f;
+		float near = 0.1f;
+		float far = 100.f;
 
 		Matrix ProjectionMatrix{};
 		Matrix invViewMatrix{};
@@ -96,20 +96,20 @@ namespace dae
 			//Keyboard Input
 			const uint8_t* pKeyboardState = SDL_GetKeyboardState(nullptr);
 
-			if (pKeyboardState[SDL_SCANCODE_W])
+			if (pKeyboardState[SDL_SCANCODE_W] || pKeyboardState[SDL_SCANCODE_UP])
 			{
 				origin += (step * deltaTime) * forward.Normalized();
 			}
-			if (pKeyboardState[SDL_SCANCODE_S])
+			if (pKeyboardState[SDL_SCANCODE_S] || pKeyboardState[SDL_SCANCODE_DOWN])
 			{
 				origin -= (step * deltaTime) * forward.Normalized();
 			}
-			if (pKeyboardState[SDL_SCANCODE_D])
+			if (pKeyboardState[SDL_SCANCODE_D] || pKeyboardState[SDL_SCANCODE_RIGHT])
 			{
 
 				origin += (step * deltaTime) * right.Normalized();
 			}
-			if (pKeyboardState[SDL_SCANCODE_A])
+			if (pKeyboardState[SDL_SCANCODE_A] || pKeyboardState[SDL_SCANCODE_LEFT])
 			{
 				origin -= (step * deltaTime) * right.Normalized();
 			}

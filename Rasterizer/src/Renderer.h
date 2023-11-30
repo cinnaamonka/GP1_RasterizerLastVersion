@@ -37,12 +37,11 @@ namespace dae
 		bool SaveBufferToImage() const;
 		void VertexTransformationFunction(const std::vector<Mesh>& meshes_in, std::vector<Mesh4AxisVertex>& meshes_out,const Camera camera);
 		Vector2 ConvertNDCtoScreen(const Vector3& ndc, int screenWidth, int screenHeight)const;
-		void ToggleShadows() { m_FinalColorEnabled = !m_FinalColorEnabled; };
+		void ToggleZBuffer() { m_FinalColorEnabled = !m_FinalColorEnabled; };
 		void ToggleNormalMap() { m_NormalMapEnabled = !m_NormalMapEnabled; };
 		ColorRGB PixelShading(Vertex_Out& v, const Vector2& uvInterpolated);
 		void CycleLightingMode();
 		void RotateModel();
-		ColorRGB NormalMode(Vertex_Out& v, const Vector2& uvInterpolated);
 	private:
 		SDL_Window* m_pWindow{};
 
