@@ -42,6 +42,7 @@ namespace dae
 		ColorRGB PixelShading(Vertex_Out& v, const Vector2& uvInterpolated);
 		void CycleLightingMode();
 		void RotateModel();
+		ColorRGB NormalMode(Vertex_Out& v, const Vector2& uvInterpolated);
 	private:
 		SDL_Window* m_pWindow{};
 

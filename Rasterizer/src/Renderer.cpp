@@ -23,8 +23,6 @@ Renderer::Renderer(SDL_Window* pWindow) :
 	m_pBackBuffer = SDL_CreateRGBSurface(0, m_Width, m_Height, 32, 0, 0, 0, 0);
 	m_pBackBufferPixels = (uint32_t*)m_pBackBuffer->pixels;
 
-	//m_pDepthBufferPixels = new float[m_Width * m_Height];
-
 	//Initialize Camera
 
 	m_AspectRatio = static_cast<float>(m_Width) / static_cast<float>(m_Height);
@@ -42,8 +40,8 @@ Renderer::Renderer(SDL_Window* pWindow) :
 	m_Vehicle.primitiveTopology = PrimitiveTopology::TriangleList;
 	const float Ztranslation = 50.0f;
 
-	m_Translation =  Matrix::CreateTranslation(Vector3(0, 0, Ztranslation));
-	
+	m_Translation = Matrix::CreateTranslation(Vector3(0, 0, Ztranslation));
+
 }
 
 Renderer::~Renderer()
@@ -66,7 +64,7 @@ void Renderer::Update(Timer* pTimer)
 	{
 		m_Vehicle.worldMatrix = m_Translation;
 	}
-	
+
 }
 
 void Renderer::Render()
@@ -89,7 +87,7 @@ void Renderer::Render()
 
 	const SDL_Rect clearRect = { 0, 0, m_Width, m_Height };
 	//clearing the back buffer
-	ColorRGB finalColor = {0,0,0};
+	ColorRGB finalColor = { 0,0,0 };
 	Triangle4 currentTriangle;
 
 	for (int i = 0; i < m_Meshes[0].indices.size() - 2; i += 3)
@@ -158,13 +156,13 @@ void Renderer::Render()
 
 				if (m_NormalMapEnabled)
 				{
-					finalColor = m_NormalMapVehicle->Sample(uvInterp);
+					finalColor = NormalMode(P, uvInterp);
 				}
 				else if (m_FinalColorEnabled && !m_NormalMapEnabled)
 				{
 					finalColor = PixelShading(P, uvInterp);
 				}
-				else if(!m_FinalColorEnabled && !m_NormalMapEnabled)
+				else if (!m_FinalColorEnabled && !m_NormalMapEnabled)
 				{
 					const float remap = Remap(pixelDepth, 0.9f, 1.0f, 0.2f, 1.0f);
 					finalColor = ColorRGB{ remap, remap, remap };
@@ -200,7 +198,7 @@ void Renderer::VertexTransformationFunction(const std::vector<Mesh>& meshes_in, 
 				vertex.tangent,
 				vertex.viewDirection
 			};
-			const Matrix worldViewProjectionMatrix{ meshes_in[i].worldMatrix * m_Camera.worldViewProectionMatrix};
+			const Matrix worldViewProjectionMatrix{ meshes_in[i].worldMatrix * m_Camera.worldViewProectionMatrix };
 			newVertex.position = worldViewProjectionMatrix.TransformPoint(newVertex.position);
 
 			//perspective divide
@@ -216,7 +214,7 @@ void Renderer::VertexTransformationFunction(const std::vector<Mesh>& meshes_in, 
 
 			newVertex.normal = m_Vehicle.worldMatrix.TransformVector(newVertex.normal);
 			newVertex.tangent = m_Vehicle.worldMatrix.TransformVector(newVertex.tangent);
-			
+
 			newVertex.viewDirection = camera.origin - newVertex.position;
 			newVertex.viewDirection.Normalize();
 
@@ -247,8 +245,7 @@ Vector2 Renderer::ConvertNDCtoScreen(const Vector3& ndc, int screenWidth, int sc
 ColorRGB Renderer::PixelShading(Vertex_Out& v, const Vector2& uvInterpolated)
 {
 	const Vector3 lightDirection = { -.577f, .577f, -.577f };
-	// for some reason works only like this 
-	//const Vector3 lightDirection = { .577f,-.577f, .577f };
+
 	const float lightIntensivity = 7.f;
 	const int shiniessValue = 25;
 
@@ -261,16 +258,16 @@ ColorRGB Renderer::PixelShading(Vertex_Out& v, const Vector2& uvInterpolated)
 
 	const Vector3 resultNormal = tangentSpaceAxis.TransformVector(sampledNormal.r, sampledNormal.g, sampledNormal.b);
 
-	
+
 	// lambert diffuse
 	const auto& sampledColor = m_TextureVehicle->Sample(uvInterpolated);
 	const ColorRGB diffuseColor = lightIntensivity * sampledColor;
 
 	ColorRGB lambertFinalColor = diffuseColor / float(M_PI);
 
-	 float cosAngle = Vector3::Dot(resultNormal, lightDirection);
+	float cosAngle = Vector3::Dot(resultNormal, lightDirection);
 
-	
+
 	// phong 
 	const Vector3 reflect = Vector3::Reflect(lightDirection, resultNormal);
 	const float cosAlpha = std::max(Vector3::Dot(reflect, v.viewDirection), 0.0f);
@@ -290,32 +287,29 @@ ColorRGB Renderer::PixelShading(Vertex_Out& v, const Vector2& uvInterpolated)
 
 		break;
 
-		case LightingMode::Diffuse:
+	case LightingMode::Diffuse:
 
-			if (cosAngle < 0) return { 0,0,0 };
+		if (cosAngle < 0) return { 0,0,0 };
 
-			return lambertFinalColor * ColorRGB{ cosAngle, cosAngle, cosAngle };
+		return lambertFinalColor * ColorRGB{ cosAngle, cosAngle, cosAngle };
 
-			break;
+		break;
 
-		case LightingMode::Specular:
+	case LightingMode::Specular:
 
-			if (cosAngle < 0)return { 0,0,0 };
-			return specularColor * ColorRGB{ cosAngle, cosAngle, cosAngle };
+		if (cosAngle < 0)return { 0,0,0 };
+		return specularColor * ColorRGB{ cosAngle, cosAngle, cosAngle };
 
-			break;
+		break;
 
-		case LightingMode::Combined:
+	case LightingMode::Combined:
 
-			if (cosAngle < 0)return { 0,0,0 };
-			
-			return (lambertFinalColor + specularColor + ambientOcclusion) * ColorRGB(cosAngle, cosAngle, cosAngle);
+		if (cosAngle < 0)return { 0,0,0 };
 
-			break;
-		}
-	
-	
+		return (lambertFinalColor + specularColor + ambientOcclusion) * ColorRGB(cosAngle, cosAngle, cosAngle);
 
+		break;
+	}
 }
 void Renderer::CycleLightingMode()
 {
@@ -327,6 +321,36 @@ void Renderer::RotateModel()
 {
 	m_CanBeRotated = !m_CanBeRotated;
 
+}
+ColorRGB Renderer::NormalMode(Vertex_Out& v, const Vector2& uvInterpolated)
+{
+	const Vector3 lightDirection = { -.577f, .577f, -.577f };
+	const float lightIntensivity = 7.f;
+
+	ColorRGB normalMapSample = m_NormalMapVehicle->Sample(uvInterpolated);
+
+	normalMapSample = 2.f * normalMapSample - ColorRGB{ 1.f,1.f,1.f };
+
+	Vector3 sampledNormal = Vector3{ normalMapSample.r,normalMapSample.g,normalMapSample.b };
+
+	const Vector3 binormal = { Vector3::Cross(v.normal,v.tangent) };
+	Matrix tangentSpaceTransfMatrix = { v.tangent, binormal, v.normal,Vector3{0,0,0} };
+
+	sampledNormal = tangentSpaceTransfMatrix.TransformVector(sampledNormal);
+
+	float cosAngle = Vector3::Dot(sampledNormal, lightDirection);
+
+	if (cosAngle >= 0)
+	{
+		const float kd{ 1 };
+		const ColorRGB cd{ colors::Gray };
+		const ColorRGB BRDF{ cd * kd / float(M_PI) };
+		return lightIntensivity * BRDF * ColorRGB{ cosAngle,cosAngle,cosAngle };
+	}
+	else
+	{
+		return { 0,0,0 };
+	}
 }
 
 
