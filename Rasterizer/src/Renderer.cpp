@@ -265,7 +265,7 @@ ColorRGB Renderer::PixelShading(Vertex_Out& v, const Vector2& uvInterpolated)
 
 	// lambert diffuse
 	const auto& sampledColor = m_TextureVehicle->Sample(uvInterpolated);
-	const ColorRGB diffuseColor = sampledColor;
+	const ColorRGB diffuseColor = lightIntensivity * sampledColor;
 
 	ColorRGB lambertFinalColor = diffuseColor / float(M_PI);
 
@@ -295,14 +295,14 @@ ColorRGB Renderer::PixelShading(Vertex_Out& v, const Vector2& uvInterpolated)
 
 		if (cosAngle < 0) return { 0,0,0 };
 
-		return lambertFinalColor * ColorRGB{ cosAngle, cosAngle, cosAngle } *lightIntensivity;
+		return lambertFinalColor * ColorRGB{ cosAngle, cosAngle, cosAngle } * lightIntensivity;
 
 		break;
 
 	case LightingMode::Specular:
 
 		if (cosAngle < 0)return { 0,0,0 };
-		return specularColor * ColorRGB{ cosAngle, cosAngle, cosAngle } *lightIntensivity;
+		return specularColor * ColorRGB{ cosAngle, cosAngle, cosAngle };
 
 		break;
 
@@ -310,7 +310,7 @@ ColorRGB Renderer::PixelShading(Vertex_Out& v, const Vector2& uvInterpolated)
 
 		if (cosAngle < 0)return { 0,0,0 };
 
-		return (lambertFinalColor + specularColor + ambientOcclusion) * ColorRGB(cosAngle, cosAngle, cosAngle) * lightIntensivity;
+		return (lambertFinalColor + specularColor + ambientOcclusion) * ColorRGB(cosAngle, cosAngle, cosAngle);
 
 		break;
 	}
