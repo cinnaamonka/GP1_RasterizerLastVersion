@@ -295,7 +295,7 @@ ColorRGB Renderer::PixelShading(Vertex_Out& v, const Vector2& uvInterpolated)
 
 		if (cosAngle < 0) return { 0,0,0 };
 
-		return lambertFinalColor * ColorRGB{ cosAngle, cosAngle, cosAngle } * lightIntensivity;
+		return lambertFinalColor * ColorRGB{ cosAngle, cosAngle, cosAngle };
 
 		break;
 

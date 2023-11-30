@@ -23,11 +23,11 @@ namespace dae
 
 			// Calculate 2D cross products (signed areas)
 
-			float cross1 = Vector2::Cross(pointToVertex2, edge2);	if (cross1 > 0) return false;
+			float cross1 = Vector2::Cross(pointToVertex2, edge2);	if (cross1 >= 0) return false;
 
-			float cross0 = Vector2::Cross(pointToVertex1, edge1);	if (cross0 > 0) return false;
+			float cross0 = Vector2::Cross(pointToVertex1, edge1);	if (cross0 >= 0) return false;
 
-			float cross2 = Vector2::Cross(pointToVertex, edge);	if (cross2 > 0) return false;
+			float cross2 = Vector2::Cross(pointToVertex, edge);	if (cross2 >= 0) return false;
 
 			// Check the signs of the cross products
 
