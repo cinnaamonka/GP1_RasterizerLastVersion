@@ -16,7 +16,7 @@ Renderer::Renderer(SDL_Window* pWindow) :
 	m_pWindow(pWindow)
 {
 	//Initialize
-	SDL_GetWindowSize(pWindow, &m_Width, &m_Height);
+	SDL_GetWindowSize(pWindow, &m_Width, &m_Height); 
 
 	//Create Buffers
 	m_pFrontBuffer = SDL_GetWindowSurface(pWindow);
@@ -30,11 +30,6 @@ Renderer::Renderer(SDL_Window* pWindow) :
 	m_pDepthBuffer.resize(m_Height * m_Width);
 	m_FinalColorEnabled = true;
 
-	//m_TextureVehicle = Texture::LoadFromFile("Resources/uv_grid_2.png");
-	m_TextureVehicle = Texture::LoadFromFile("Resources/vehicle_diffuse.png");
-	m_NormalMapVehicle = Texture::LoadFromFile("Resources/vehicle_normal.png");
-	m_SpecularColor = Texture::LoadFromFile("Resources/vehicle_specular.png");
-	m_GlosinessMap = Texture::LoadFromFile("Resources/vehicle_gloss.png");
 
 	Utils::ParseOBJ("Resources/vehicle.obj", m_Vehicle.vertices, m_Vehicle.indices);
 	m_Vehicle.primitiveTopology = PrimitiveTopology::TriangleList;
@@ -47,10 +42,7 @@ Renderer::Renderer(SDL_Window* pWindow) :
 
 Renderer::~Renderer()
 {
-	delete m_TextureVehicle;
-	delete m_NormalMapVehicle;
-	delete m_SpecularColor;
-	delete m_GlosinessMap;
+
 }
 
 void Renderer::Update(Timer* pTimer)

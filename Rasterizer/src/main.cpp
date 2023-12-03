@@ -2,6 +2,8 @@
 #include "vld.h"
 #include "SDL.h"
 #include "SDL_surface.h"
+
+
 #undef main
 
 //Standard includes
@@ -21,6 +23,7 @@ void ShutDown(SDL_Window* pWindow)
 
 int main(int argc, char* args[])
 {
+
 	//Unreferenced parameters
 	(void)argc;
 	(void)args;

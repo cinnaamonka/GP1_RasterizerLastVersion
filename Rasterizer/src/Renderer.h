@@ -2,9 +2,10 @@
 
 #include <cstdint>
 #include <vector>
-
+#include <memory>
 #include "Camera.h"
 #include "DataTypes.h"
+#include "Texture.h"
 
 
 struct SDL_Window;
@@ -62,10 +63,10 @@ namespace dae
 
 		Mesh m_Vehicle{};
 
-		Texture* m_TextureVehicle;
-		Texture* m_NormalMapVehicle;
-		Texture* m_SpecularColor;
-		Texture* m_GlosinessMap;
+		std::unique_ptr<dae::Texture> m_TextureVehicle = std::unique_ptr<dae::Texture>(dae::Texture::LoadFromFile("Resources/vehicle_diffuse.png")); 
+		std::unique_ptr<dae::Texture> m_NormalMapVehicle = std::unique_ptr<dae::Texture>(dae::Texture::LoadFromFile("Resources/vehicle_normal.png"));
+		std::unique_ptr<dae::Texture> m_SpecularColor = std::unique_ptr<dae::Texture>(dae::Texture::LoadFromFile("Resources/vehicle_specular.png"));
+		std::unique_ptr<dae::Texture> m_GlosinessMap = std::unique_ptr<dae::Texture>(dae::Texture::LoadFromFile("Resources/vehicle_gloss.png")); 
 
 		int m_Width{};
 		int m_Height{};
